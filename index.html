@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+    <title>Скибиди | TWOалет</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="blur-enabled">
+    <video id="bgVideo" autoplay muted loop playsinline style="display:none;"></video>
+    <img id="bgImage" style="display:none;">
+    <div id="youtubeWrapper" class="youtube-wrapper" style="display:none;"></div>
+    <canvas id="particles"></canvas>
+    <div class="overlay"></div>
+
+    <!-- Виджет погоды -->
+    <div class="weather-widget" id="weatherWidget">
+        <div class="weather-city">🌆 Омск</div>
+        <div class="weather-main">
+            <div class="weather-temp" id="weatherTemp">--°C</div>
+            <div class="weather-icon" id="weatherIcon">☀️</div>
+        </div>
+        <div class="weather-details">
+            <div class="weather-detail">
+                <div class="weather-detail-label">Влажность</div>
+                <div class="weather-detail-value" id="weatherHumidity">--%</div>
+            </div>
+            <div class="weather-detail">
+                <div class="weather-detail-label">Ветер</div>
+                <div class="weather-detail-value" id="weatherWind">-- м/с</div>
+            </div>
+            <div class="weather-detail">
+                <div class="weather-detail-label">Давление</div>
+                <div class="weather-detail-value" id="weatherPressure">-- мм</div>
+            </div>
+            <div class="weather-detail">
+                <div class="weather-detail-label">Ощущается</div>
+                <div class="weather-detail-value" id="weatherFeels">--°C</div>
+            </div>
+        </div>
+        <div class="weather-update" id="weatherUpdate">Обновлено: --:--</div>
+    </div>
+
+    <div class="top">
+        <div class="clock" id="clock"></div>
+        <div class="search-container">
+            <input id="searchInput" class="search-input" placeholder="Поиск..." autocomplete="off">
+            <div id="searchHistory" class="search-history"></div>
+        </div>
+    </div>
+
+    <div class="dropdown-container">
+        <button class="dropdown-button" onclick="app.hud.toggleDropdown()">☰</button>
+        <div class="dropdown-menu" id="dropdownMenu">
+            <button class="dropdown-item" onclick="app.groups.add(); app.hud.hideDropdown()">Добавить группу</button>
+            <button class="dropdown-item" onclick="app.background.set(); app.hud.hideDropdown()">
+                <span>Установить фон</span>
+            </button>
+
+            <div class="volume-control">
+                <span class="volume-icon" id="volumeIcon" onclick="app.audio.toggleMute()">🔊</span>
+                <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="50">
+                <span class="volume-value" id="volumeValue">50%</span>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" onclick="app.weather.toggle()" id="weatherToggleBtn">
+                <span>Показать погоду</span>
+                <span id="weatherIndicator" class="toggle-indicator"></span>
+            </button>
+
+            <button class="dropdown-item" onclick="app.hud.toggleSleepMode()" id="sleepModeToggleBtn">
+                <span>Режим ожидания</span>
+                <span id="sleepModeIndicator" class="toggle-indicator"></span>
+            </button>
+
+            <button class="dropdown-item" onclick="app.hud.toggleBlur()" id="blurToggleBtn">
+                <span>Размытие фона</span>
+                <span id="blurIndicator" class="toggle-indicator"></span>
+            </button>
+
+            <button class="dropdown-item" onclick="app.particles.toggle()" id="particlesToggleBtn">
+                <span>Частицы</span>
+                <span id="particlesIndicator" class="toggle-indicator"></span>
+            </button>
+
+            <button class="dropdown-item" onclick="toggleParticlesSettings()">
+                <span>Настройки частиц</span>
+            </button>
+            <!-- настройки частиц -->
+            <div class="particles-settings-panel" id="particlesSettingsPanel">
+                <div class="particles-settings-content">
+                    <div class="settings-group">
+                        <label>Количество частиц: <span id="starCountValue">50</span></label>
+                        <input type="range" id="starCount" min="10" max="1000" value="20" step="1">
+                    </div>
+                    <div class="settings-group">
+                        <label>Сила отталкивания от мыши: <span id="repelForceValue">0.3</span></label>
+                        <input type="range" id="repelForce" min="0" max="1" value="0.3" step="0.01">
+                    </div>
+                    <div class="settings-group">
+                        <label>Радиус отталкивания от мыши: <span id="repelRadiusValue">200</span></label>
+                        <input type="range" id="repelRadius" min="50" max="500" value="200" step="5">
+                    </div>
+                    <div class="settings-group">
+                        <label>Базовая скорость: <span id="baseSpeedValue">0.15</span></label>
+                        <input type="range" id="baseSpeed" min="0" max="0.5" value="0.15" step="0.01">
+                    </div>
+                    <div class="settings-group">
+                        <label>Отскок от стен: <span id="bounceValue">0.2</span></label>
+                        <input type="range" id="bounce" min="0" max="1" value="0.2" step="0.01">
+                    </div>
+                    <div class="settings-group">
+                        <label>Расстояние линий: <span id="lineDistanceValue">150</span></label>
+                        <input type="range" id="lineDistance" min="50" max="300" value="150" step="5">
+                    </div>
+                    <div class="settings-group">
+                        <label>Мин. расстояние между частицами: <span id="overlapDistanceValue">5</span></label>
+                        <input type="range" id="overlapDistance" min="0" max="50" value="5" step="1">
+                    </div>
+                    <div class="settings-group">
+                        <label>Сила отталкивания частиц: <span id="particleRepelForceValue">0.01</span></label>
+                        <input type="range" id="particleRepelForce" min="0" max="0.1" value="0.01" step="0.001">
+                    </div>
+                    <div class="settings-group">
+                        <label>Радиус отталкивания частиц: <span id="particleRepelRadiusValue">60</span></label>
+                        <input type="range" id="particleRepelRadius" min="20" max="200" value="60" step="5">
+                    </div>
+                </div>
+                <div class="particles-settings-footer">
+                    <button onclick="resetParticlesSettings()">Сбросить</button>
+                    <button onclick="saveParticlesSettings()">Сохранить</button>
+                </div>
+            </div>
+
+            <button class="dropdown-item" onclick="app.search.toggleOpenMethod()" id="openMethodToggleBtn">
+                <span>Заменять вкладку</span>
+                <span id="openMethodIndicator" class="toggle-indicator"></span>
+            </button>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" onclick="app.search.setEngine('yandex'); app.hud.hideDropdown()"
+                id="engineYandex">Яндекс</button>
+            <button class="dropdown-item" onclick="app.search.setEngine('google'); app.hud.hideDropdown()"
+                id="engineGoogle">Google</button>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" onclick="app.history.toggle()" id="toggleHistoryBtn">
+                <span>История поиска</span>
+                <span id="historyIndicator" class="toggle-indicator"></span>
+            </button>
+            <button class="dropdown-item" onclick="app.history.clear(); app.hud.hideDropdown()">Очистить историю</button>
+
+            <div class="dropdown-divider"></div>
+
+            <button class="dropdown-item" onclick="app.storage.copyConfig()">
+                <span>Копировать конфигурацию</span>
+            </button>
+
+            <button class="dropdown-item" onclick="app.storage.pasteConfig()">
+                <span>Вставить конфигурацию</span>
+            </button>
+
+            <button class="dropdown-item" onclick="app.storage.resetConfig()" style="color: #ff6b6b;">
+                <span>Удалить текущую конфигурацию</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="groups" id="groups"></div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
